@@ -1,8 +1,8 @@
-.idea/
-logs/
+.idea
+logs
 .iml
 .model
-checkpoint/
+checkpoints
 cache/
 .csv
 .xlsx
@@ -48,7 +48,6 @@ train_data/
 test_data/
 result/
 export_ptr_model/
-data/
 Data/
 Log/
 log/
@@ -57,7 +56,6 @@ __pycache__/
 log/
 model/
 
-*/data/
 */graphs/
 
 
