@@ -59,7 +59,7 @@ def parse_args():
 
 class FM(BaseEstimator, TransformerMixin):
     def __init__(self, features_M, pretrain_flag, save_file, hidden_factor, loss_type, epoch, batch_size, learning_rate,
-                 lamda_bilinear, keep,
+                 lambda_bilinear, keep,
                  optimizer_type, batch_norm, verbose, random_seed=2016):
         # bind params to class
         self.batch_size = batch_size
@@ -69,7 +69,7 @@ class FM(BaseEstimator, TransformerMixin):
         self.pretrain_flag = pretrain_flag
         self.loss_type = loss_type
         self.features_M = features_M
-        self.lamda_bilinear = lamda_bilinear
+        self.lambda_bilinear = lambda_bilinear
         self.keep = keep
         self.epoch = epoch
         self.random_seed = random_seed
@@ -112,13 +112,13 @@ class FM(BaseEstimator, TransformerMixin):
             self.squared_sum_features_emb = tf.reduce_sum(self.squared_features_emb, 1)  # None * K
 
             # ________ FM __________
-            self.FM = 0.5 * tf.sub(self.summed_features_emb_square, self.squared_sum_features_emb)  # None * K
+            self.FM = 0.5 * tf.subtract(self.summed_features_emb_square, self.squared_sum_features_emb)  # None * K
             if self.batch_norm:
                 self.FM = self.batch_norm_layer(self.FM, train_phase=self.train_phase, scope_bn='bn_fm')
             self.FM = tf.nn.dropout(self.FM, self.dropout_keep)  # dropout at the FM layer
 
             # _________out _________
-            Bilinear = tf.reduce_sum(self.FM, 1, keep_dims=True)  # None * 1
+            Bilinear = tf.reduce_sum(self.FM, 1, keepdims=True)  # None * 1
             self.Feature_bias = tf.reduce_sum(tf.nn.embedding_lookup(self.weights['feature_bias'], self.train_features),
                                               1)  # None * 1
             Bias = self.weights['bias'] * tf.ones_like(self.train_labels)  # None * 1
@@ -126,17 +126,17 @@ class FM(BaseEstimator, TransformerMixin):
 
             # Compute the loss.
             if self.loss_type == 'square_loss':
-                if self.lamda_bilinear > 0:
-                    self.loss = tf.nn.l2_loss(tf.sub(self.train_labels, self.out)) + tf.contrib.layers.l2_regularizer(
-                        self.lamda_bilinear)(self.weights['feature_embeddings'])  # regulizer
+                if self.lambda_bilinear > 0:
+                    self.loss = tf.nn.l2_loss(tf.subtract(self.train_labels, self.out)) + tf.contrib.layers.l2_regularizer(
+                        self.lambda_bilinear)(self.weights['feature_embeddings'])  # regulizer
                 else:
-                    self.loss = tf.nn.l2_loss(tf.sub(self.train_labels, self.out))
+                    self.loss = tf.nn.l2_loss(tf.subtract(self.train_labels, self.out))
             elif self.loss_type == 'log_loss':
                 self.out = tf.sigmoid(self.out)
                 if self.lambda_bilinear > 0:
                     self.loss = tf.contrib.losses.log_loss(self.out, self.train_labels, weight=1.0, epsilon=1e-07,
                                                            scope=None) + tf.contrib.layers.l2_regularizer(
-                        self.lamda_bilinear)(self.weights['feature_embeddings'])  # regulizer
+                        self.lambda_bilinear)(self.weights['feature_embeddings'])  # regulizer
                 else:
                     self.loss = tf.contrib.losses.log_loss(self.out, self.train_labels, weight=1.0, epsilon=1e-07,
                                                            scope=None)
@@ -169,8 +169,7 @@ class FM(BaseEstimator, TransformerMixin):
                     variable_parameters *= dim.value
                 total_parameters += variable_parameters
             if self.verbose > 0:
-                print
-                "#params: %d" % total_parameters
+                print("#params: %d" % total_parameters)
 
     def _initialize_weights(self):
         all_weights = dict()
@@ -249,11 +248,11 @@ class FM(BaseEstimator, TransformerMixin):
             print("Init: \t train=%.4f, validation=%.4f, test=%.4f [%.1f s]" % (
             init_train, init_valid, init_test, time() - t2))
 
-        for epoch in xrange(self.epoch):
+        for epoch in range(self.epoch):
             t1 = time()
             self.shuffle_in_unison_scary(Train_data['X'], Train_data['Y'])
             total_batch = int(len(Train_data['Y']) / self.batch_size)
-            for i in xrange(total_batch):
+            for i in range(total_batch):
                 # generate a batch
                 batch_xs = self.get_random_block_from_data(Train_data, self.batch_size)
                 # Fit training
@@ -275,8 +274,7 @@ class FM(BaseEstimator, TransformerMixin):
                 break
 
         if self.pretrain_flag < 0:
-            print
-            "Save model to file as pretrain."
+            print("Save model to file as pretrain.")
             self.saver.save(self.sess, self.save_file)
 
     def eva_termination(self, valid):
@@ -323,12 +321,11 @@ if __name__ == '__main__':
     args = parse_args()
     data = DATA.LoadData(args.path, args.dataset, args.loss_type)
     if args.verbose > 0:
-        print(
-            "FM: dataset=%s, factors=%d, loss_type=%s, #epoch=%d, batch=%d, lr=%.4f, lambda=%.1e, keep=%.2f, optimizer=%s, batch_norm=%d"
+        print("FM: dataset=%s, factors=%d, loss_type=%s, #epoch=%d, batch=%d, lr=%.4f, lambda=%.1e, keep=%.2f, optimizer=%s, batch_norm=%d"
             % (args.dataset, args.hidden_factor, args.loss_type, args.epoch, args.batch_size, args.lr, args.lamda,
                args.keep_prob, args.optimizer, args.batch_norm))
 
-    save_file = '../pretrain/%s_%d/%s_%d' % (args.dataset, args.hidden_factor, args.dataset, args.hidden_factor)
+    save_file = './pretrain/%s_%d/%s_%d' % (args.dataset, args.hidden_factor, args.dataset, args.hidden_factor)
     # Training
     t1 = time()
     model = FM(data.features_M, args.pretrain, save_file, args.hidden_factor, args.loss_type, args.epoch,
