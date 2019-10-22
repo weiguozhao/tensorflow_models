@@ -8,6 +8,8 @@ import argparse
 from util import *
 from sklearn.metrics import *
 
+# cite: https://github.com/LLSean/data-mining/tree/master/ffm
+
 
 class FFM(object):
     def __init__(self, num_classes, k, field, lr, batch_size, feature_length, reg_l1, reg_l2, feature2field):
@@ -41,8 +43,8 @@ class FFM(object):
             for i in range(self.p):
                 for j in range(i + 1, self.p):
                     self.interaction_terms += tf.multiply(
-                        tf.reduce_sum(tf.multiply(self.v[i, self.feature2field[i]], self.v[j, self.feature2field[j]])),
-                        tf.multiply(self.X[:, i], self.X[:, j]))
+                        tf.reduce_sum(tf.multiply(self.v[i, self.feature2field[i]], self.v[j, self.feature2field[j]])), # vi * vj
+                        tf.multiply(self.X[:, i], self.X[:, j]))    # xi * xj
         self.interaction_terms = tf.reshape(self.interaction_terms, [-1, 1])
         self.y_out = tf.math.add(self.linear_terms, self.interaction_terms)
         if self.num_classes == 2:
@@ -71,6 +73,7 @@ class FFM(object):
         self.global_step = tf.Variable(0, trainable=False)
         optimizer = tf.train.AdagradOptimizer(self.lr)
         extra_update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        # control_dependencies 确保定义在 tf.GraphKeys.UPDATE_OPS 中的collection执行完
         with tf.control_dependencies(extra_update_ops):
             self.train_op = optimizer.minimize(self.loss, global_step=self.global_step)
 

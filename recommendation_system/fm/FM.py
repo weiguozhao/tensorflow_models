@@ -7,6 +7,7 @@ from util import *
 
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+# cite: https://github.com/LLSean/data-mining/tree/master/fm
 
 class FM(object):
     def __init__(self, num_classes, k, lr, batch_size, feature_length, reg_l1, reg_l2):
